@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: stock-dashboard-realtime-poc
+    name: stock-dashboard-2317-realtime-poc
     env: node
     plan: free
     buildCommand: npm install

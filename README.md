@@ -1,8 +1,11 @@
-# stock-dashboard-realtime-poc (Render-ready)
+# 2317 鴻海 Realtime PoC（Render-ready）
 
-不靠 TradingView / 不靠券商 API 的 Realtime PoC：
-- 1 秒更新
+這是一個「看起來像看盤軟體」的 PoC：
+- 1 秒更新（PoC 模擬價）
 - 5 分 K 聚合（in-progress + close）
+- 預設標的：2317 鴻海
+
+> 注意：目前報價是 PoC 模擬。未來接正式即時行情，只需替換 QuoteProvider。
 
 ## 本機
 ```bash
@@ -10,6 +13,3 @@ npm install
 npm run start
 ```
 打開 http://localhost:3000
-
-## Render
-Push 到 GitHub → Render New Web Service → 選 repo → Done
