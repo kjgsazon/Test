@@ -9,8 +9,7 @@
   "dependencies": {
     "express": "^4.19.2",
     "cors": "^2.8.5",
-    "ws": "^8.18.0",
-    "@fugle/marketdata": "^1.4.0"
+    "ws": "^8.18.0"
   },
   "engines": {
     "node": ">=18"
