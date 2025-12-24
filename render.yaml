@@ -4,8 +4,8 @@ services:
     env: node
     plan: free
     buildCommand: npm install
-    startCommand: npm run start
+    startCommand: npm start
     autoDeploy: true
     envVars:
-      - key: PUSH_TOKEN
-        sync: false
+      - key: NODE_VERSION
+        value: 18

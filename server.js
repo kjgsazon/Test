@@ -1,5 +1,6 @@
 // server.js (Render)
 // 手機/平板看這台：
+//  - GET  /            (dashboard.html)
 //  - GET  /health
 //  - GET  /api/latest/2317
 //  - GET  /api/decision/2317
@@ -20,7 +21,7 @@ const STORE = {
   decision: {}, // decision["2317"] = {...}
 };
 
-// ====== Token（一定要設）======
+// ====== Token（一定要設在 Render 環境變數）======
 const PUSH_TOKEN = process.env.PUSH_TOKEN || "";
 
 // ====== health ======
@@ -49,19 +50,23 @@ app.get("/api/decision/:symbol", (req, res) => {
 //   "token":"xxxxx",
 //   "type":"latest" | "decision",
 //   "symbol":"2317",
-//   "data":{...}  // 直接放你本機 http_bridge 回傳的 JSON
+//   "data":{...}
 // }
 app.post("/api/push", (req, res) => {
   try {
     const { token, type, symbol, data } = req.body || {};
+
     if (!PUSH_TOKEN || token !== PUSH_TOKEN) {
       return res.status(401).json({ ok: false, error: "bad_token" });
     }
+
     const s = String(symbol || "").trim();
     if (!s) return res.status(400).json({ ok: false, error: "missing_symbol" });
+
     if (type !== "latest" && type !== "decision") {
       return res.status(400).json({ ok: false, error: "bad_type" });
     }
+
     if (typeof data !== "object" || data === null) {
       return res.status(400).json({ ok: false, error: "bad_data" });
     }
@@ -79,10 +84,9 @@ app.post("/api/push", (req, res) => {
   }
 });
 
-// ====== Dashboard 靜態頁 ======
-app.use("/", express.static(path.join(__dirname, "public")));
+// ====== Dashboard 靜態頁（重點修正：dashboard.html 在專案根目錄）======
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+  res.sendFile(path.join(__dirname, "dashboard.html"));
 });
 
 // ====== listen ======
