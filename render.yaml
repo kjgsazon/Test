@@ -1,8 +1,11 @@
 services:
   - type: web
-    name: stock-dashboard-2317-realtime-poc
+    name: stock-dashboard-realtime-poc
     env: node
     plan: free
     buildCommand: npm install
     startCommand: npm run start
     autoDeploy: true
+    envVars:
+      - key: PUSH_TOKEN
+        sync: false

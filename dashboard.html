@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>2317（鴻海）決策面板</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Arial; margin: 16px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; }
+    .card { border:1px solid #ddd; border-radius:12px; padding:12px; min-width: 280px; flex:1; }
+    .big { font-size: 36px; font-weight: 800; }
+    .pill { display:inline-block; padding:4px 10px; border-radius:999px; border:1px solid #ccc; }
+    .ok { background:#eaffea; }
+    .warn { background:#fff6d8; }
+    .bad { background:#ffe1e1; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    button { padding:10px 12px; border-radius:10px; border:1px solid #ccc; background:#f7f7f7; }
+    input { padding:10px 12px; border-radius:10px; border:1px solid #ccc; width: 240px; }
+  </style>
+</head>
+<body>
+  <h2>2317（鴻海）決策面板（遠端版）</h2>
+  <div class="card">
+    <div>目前網址：<span class="pill ok" id="host"></span></div>
+    <div style="margin-top:8px">
+      <button onclick="manual()">手動更新</button>
+      <button onclick="toggle()">自動更新：<span id="autoTxt">ON</span></button>
+      <span class="pill" id="statusPill">--</span>
+      <span style="margin-left:8px" id="ts">--</span>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:12px">
+    <div class="card">
+      <div>FinalScore</div>
+      <div class="big" id="score">--</div>
+      <div class="row">
+        <div class="pill" id="state">state: --</div>
+        <div class="pill" id="action">action: --</div>
+        <div class="pill" id="lots">lots: --</div>
+        <div class="pill" id="risk">max_risk: --</div>
+      </div>
+      <div style="margin-top:10px" id="note">--</div>
+    </div>
+
+    <div class="card">
+      <div>最新行情（latest）</div>
+      <pre id="latest">--</pre>
+    </div>
+
+    <div class="card">
+      <div>理由（reasons）</div>
+      <pre id="reasons">--</pre>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div>完整 decision JSON</div>
+    <pre id="decisionJson">--</pre>
+  </div>
+
+<script>
+  const SYMBOL = "2317";
+  const base = location.origin;
+  let timer = null;
+  let autoOn = true;
+
+  document.getElementById("host").textContent = base;
+
+  function pillStatus(ok, msg){
+    const p = document.getElementById("statusPill");
+    p.textContent = msg;
+    p.className = "pill " + (ok ? "ok" : "bad");
+  }
+
+  function fmtTs(ts){
+    if(!ts) return "--";
+    const d = new Date(ts * 1000);
+    return d.toLocaleString();
+  }
+
+  async function fetchJson(url){
+    const r = await fetch(url, { cache: "no-store" });
+    if(!r.ok) throw new Error(`${r.status} ${url}`);
+    return await r.json();
+  }
+
+  async function manual(){
+    try{
+      pillStatus(true, "更新中...");
+      const [latest, decision] = await Promise.all([
+        fetchJson(`/api/latest/${SYMBOL}`),
+        fetchJson(`/api/decision/${SYMBOL}`)
+      ]);
+
+      document.getElementById("latest").textContent = JSON.stringify(latest, null, 2);
+
+      document.getElementById("score").textContent = decision.final_score ?? "--";
+      document.getElementById("state").textContent = `state: ${decision.state ?? "--"}`;
+      document.getElementById("action").textContent = `action: ${decision.action ?? "--"}`;
+      document.getElementById("lots").textContent = `lots: ${decision.lots ?? "--"}`;
+      document.getElementById("risk").textContent = `max_risk: ${decision.max_risk_pct ?? "--"}%`;
+      document.getElementById("note").textContent = decision.note ?? "--";
+      document.getElementById("reasons").textContent = (decision.reasons || []).join("\n");
+      document.getElementById("decisionJson").textContent = JSON.stringify(decision, null, 2);
+      document.getElementById("ts").textContent = `更新時間：${fmtTs(decision.ts || latest.ts)}`;
+
+      pillStatus(true, "OK");
+    }catch(e){
+      pillStatus(false, "資料未到（請先讓 Windows 推送）");
+      console.error(e);
+    }
+  }
+
+  function toggle(){
+    autoOn = !autoOn;
+    document.getElementById("autoTxt").textContent = autoOn ? "ON" : "OFF";
+    if(autoOn){
+      timer = setInterval(manual, 1000);
+      manual();
+    }else{
+      if(timer) clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  // start
+  timer = setInterval(manual, 1000);
+  manual();
+</script>
+</body>
+</html>
