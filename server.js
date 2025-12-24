@@ -1,11 +1,15 @@
 // server.js (Render)
-// 手機/平板看這台：
-//  - GET  /            (dashboard.html)
-//  - GET  /health
-//  - GET  /api/latest/2317
-//  - GET  /api/decision/2317
+// =============================================
+// 手機 / 瀏覽器：
+//   GET  /                     → dashboard.html
+//   GET  /health               → 服務是否活著
+//   GET  /debug/token          → 檢查 PUSH_TOKEN 是否有吃到
+//   GET  /api/latest/2317
+//   GET  /api/decision/2317
+//
 // Windows 端推送：
-//  - POST /api/push  (帶 PUSH_TOKEN)
+//   POST /api/push   (需 PUSH_TOKEN)
+// =============================================
 
 const express = require("express");
 const cors = require("cors");
@@ -15,18 +19,26 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
-// ====== 記憶體暫存（Render free 可能會休眠，醒來後資料會清空，正常）======
+// ====== 記憶體暫存（Render free 會重啟，資料清空屬正常）======
 const STORE = {
-  latest: {},   // latest["2317"] = {...}
-  decision: {}, // decision["2317"] = {...}
+  latest: {},
+  decision: {},
 };
 
-// ====== Token（一定要設在 Render 環境變數）======
+// ====== Token（由 Render 環境變數提供）======
 const PUSH_TOKEN = process.env.PUSH_TOKEN || "";
 
 // ====== health ======
 app.get("/health", (req, res) => {
   res.json({ ok: true, ts: Math.floor(Date.now() / 1000) });
+});
+
+// ====== debug：檢查 Render 是否真的吃到 PUSH_TOKEN ======
+app.get("/debug/token", (req, res) => {
+  res.json({
+    hasToken: Boolean(PUSH_TOKEN),
+    tokenLength: (PUSH_TOKEN || "").length,
+  });
 });
 
 // ====== 取得 latest / decision ======
@@ -57,7 +69,11 @@ app.post("/api/push", (req, res) => {
     const { token, type, symbol, data } = req.body || {};
 
     if (!PUSH_TOKEN || token !== PUSH_TOKEN) {
-      return res.status(401).json({ ok: false, error: "bad_token" });
+      return res.status(401).json({
+        ok: false,
+        error: "bad_token",
+        hasToken: Boolean(PUSH_TOKEN),
+      });
     }
 
     const s = String(symbol || "").trim();
@@ -71,7 +87,6 @@ app.post("/api/push", (req, res) => {
       return res.status(400).json({ ok: false, error: "bad_data" });
     }
 
-    // 強制補 ts
     const now = Math.floor(Date.now() / 1000);
     const merged = { ...data, symbol: s, ts: data.ts || now };
 
@@ -84,7 +99,7 @@ app.post("/api/push", (req, res) => {
   }
 });
 
-// ====== Dashboard 靜態頁（重點修正：dashboard.html 在專案根目錄）======
+// ====== Dashboard（dashboard.html 在專案根目錄）======
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "dashboard.html"));
 });
